@@ -1,0 +1,1357 @@
+---
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(kableExtra)
+library(GGally)
+library(ggnet)
+library(network)
+library(sna)
+library(ggnetwork)
+library(widgetframe)
+library(DT)
+library(igraph)
+library(tm)
+library(SnowballC)
+library(wordcloud)
+library(RColorBrewer)
+library(plotly)
+library(shiny)
+library(shinydashboard)
+library(dashboardthemes)
+library(reshape)
+library(rvest)
+library(tidyverse)
+library(qdap)
+library(tidytext)
+library(shinyjs)
+```
+
+```{r data, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+epScrURLs <- read_csv("ScriptsURLS.csv")
+epScrURLs1 <- filter(epScrURLs, !is.na(Url))
+
+createIndDF <- function(x, output) {
+  url <- x[3]
+  ep <- x[1]
+  
+  webpage <- read_html(url)
+  script <- webpage %>% html_node(".lyrics")
+  full.text <- html_text(script, trim = TRUE)
+  
+  write(full.text, paste0(ep , ".csv"))
+}
+  
+apply(epScrURLs1, 1, createIndDF)
+```
+
+```{r s245, eval=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+
+s2e1 <- read_csv("s2e1.csv")
+s2e1_args <- c(s2e1, sep=" ")
+s2e1$line <- do.call(paste, s2e1_args)
+s2e1 <- s2e1[,c("line")]
+s2e1$line <- iconv(s2e1$line, "", "ASCII", "byte")
+s2e1$line <- gsub("<92>", "", s2e1$line)
+s2e1 <- filter(s2e1, grepl(": ",line))
+s2e1 <- str_split_fixed(s2e1$line, ":", 2)
+colnames(s2e1) <- c("Chacater","Line")
+s2e1 <- as.data.frame(s2e1)
+s2e1$Line <- gsub("\\([^>]+\\)", "", s2e1$Line)
+s2e1$Line <- gsub("NA", "", s2e1$Line)
+s2e1$Chacater <- gsub("\\([^>]+\\)", "", s2e1$Chacater)
+s2e1$Chacater <- gsub("\\[[^>]+\\]", "", s2e1$Chacater)
+s2e1 <- as.data.frame(sapply(s2e1, trimws, which="both"))
+
+s2e2 <- read_csv("s2e2.csv")
+s2e2_args <- c(s2e2, sep=" ")
+s2e2$line <- do.call(paste, s2e2_args)
+s2e2 <- s2e2[,c("line")]
+s2e2$line <- iconv(s2e2$line, "", "ASCII", "byte")
+s2e2$line <- gsub("<92>", "", s2e2$line)
+s2e2 <- filter(s2e2, grepl(": ",line))
+s2e2 <- str_split_fixed(s2e2$line, ":", 2)
+colnames(s2e2) <- c("Chacater","Line")
+s2e2 <- as.data.frame(s2e2)
+s2e2$Line <- gsub("\\([^>]+\\)", "", s2e2$Line)
+s2e2$Line <- gsub("NA", "", s2e2$Line)
+s2e2$Chacater <- gsub("\\([^>]+\\)", "", s2e2$Chacater)
+s2e2$Chacater <- gsub("\\[[^>]+\\]", "", s2e2$Chacater)
+s2e2 <- as.data.frame(sapply(s2e2, trimws, which="both"))
+
+s2e3 <- read_csv("s2e3.csv")
+s2e3_args <- c(s2e3, sep=" ")
+s2e3$line <- do.call(paste, s2e3_args)
+s2e3 <- s2e3[,c("line")]
+s2e3$line <- iconv(s2e3$line, "", "ASCII", "byte")
+s2e3$line <- gsub("<92>", "", s2e3$line)
+s2e3 <- filter(s2e3, grepl(": ",line))
+s2e3 <- str_split_fixed(s2e3$line, ":", 2)
+colnames(s2e3) <- c("Chacater","Line")
+s2e3 <- as.data.frame(s2e3)
+s2e3$Line <- gsub("\\([^>]+\\)", "", s2e3$Line)
+s2e3$Line <- gsub("NA", "", s2e3$Line)
+s2e3$Chacater <- gsub("\\([^>]+\\)", "", s2e3$Chacater)
+s2e3$Chacater <- gsub("\\[[^>]+\\]", "", s2e3$Chacater)
+s2e3 <- as.data.frame(sapply(s2e3, trimws, which="both"))
+
+s4e8 <- read_csv("s4e8.csv")
+s4e8_args <- c(s4e8, sep=" ")
+s4e8$line <- do.call(paste, s4e8_args)
+s4e8 <- s4e8[,c("line")]
+s4e8$line <- iconv(s4e8$line, "", "ASCII", "byte")
+s4e8$line <- gsub("<92>", "", s4e8$line)
+s4e8 <- filter(s4e8, grepl(": ",line))
+s4e8 <- str_split_fixed(s4e8$line, ":", 2)
+colnames(s4e8) <- c("Chacater","Line")
+s4e8 <- as.data.frame(s4e8)
+s4e8$Line <- gsub("\\([^>]+\\)", "", s4e8$Line)
+s4e8$Line <- gsub("NA", "", s4e8$Line)
+s4e8$Chacater <- gsub("\\([^>]+\\)", "", s4e8$Chacater)
+s4e8$Chacater <- gsub("\\[[^>]+\\]", "", s4e8$Chacater)
+s4e8 <- as.data.frame(sapply(s4e8, trimws, which="both"))
+
+s4e9 <- read_csv("s4e9.csv")
+s4e9_args <- c(s4e9, sep=" ")
+s4e9$line <- do.call(paste, s4e9_args)
+s4e9 <- s4e9[,c("line")]
+s4e9$line <- iconv(s4e9$line, "", "ASCII", "byte")
+s4e9$line <- gsub("<92>", "", s4e9$line)
+s4e9 <- filter(s4e9, grepl(": ",line))
+s4e9 <- str_split_fixed(s4e9$line, ":", 2)
+colnames(s4e9) <- c("Chacater","Line")
+s4e9 <- as.data.frame(s4e9)
+s4e9$Line <- gsub("\\([^>]+\\)", "", s4e9$Line)
+s4e9$Line <- gsub("NA", "", s4e9$Line)
+s4e9$Chacater <- gsub("\\([^>]+\\)", "", s4e9$Chacater)
+s4e9$Chacater <- gsub("\\[[^>]+\\]", "", s4e9$Chacater)
+s4e9 <- as.data.frame(sapply(s4e9, trimws, which="both"))
+
+s4e10 <- read_csv("s4e10.csv")
+s4e10_args <- c(s4e10, sep=" ")
+s4e10$line <- do.call(paste, s4e10_args)
+s4e10 <- s4e10[,c("line")]
+s4e10$line <- iconv(s4e10$line, "", "ASCII", "byte")
+s4e10$line <- gsub("<92>", "", s4e10$line)
+s4e10 <- filter(s4e10, grepl(": ",line))
+s4e10 <- str_split_fixed(s4e10$line, ":", 2)
+colnames(s4e10) <- c("Chacater","Line")
+s4e10 <- as.data.frame(s4e10)
+s4e10$Line <- gsub("\\([^>]+\\)", "", s4e10$Line)
+s4e10$Line <- gsub("NA", "", s4e10$Line)
+s4e10$Chacater <- gsub("\\([^>]+\\)", "", s4e10$Chacater)
+s4e10$Chacater <- gsub("\\[[^>]+\\]", "", s4e10$Chacater)
+s4e10 <- as.data.frame(sapply(s4e10, trimws, which="both"))
+
+s5e1 <- read_csv("s5e1.csv")
+s5e1_args <- c(s5e1, sep=" ")
+s5e1$line <- do.call(paste, s5e1_args)
+s5e1 <- s5e1[,c("line")]
+s5e1$line <- iconv(s5e1$line, "", "ASCII", "byte")
+s5e1$line <- gsub("<92>", "", s5e1$line)
+s5e1 <- filter(s5e1, grepl(": ",line))
+s5e1 <- str_split_fixed(s5e1$line, ":", 2)
+colnames(s5e1) <- c("Chacater","Line")
+s5e1 <- as.data.frame(s5e1)
+s5e1$Line <- gsub("\\([^>]+\\)", "", s5e1$Line)
+s5e1$Line <- gsub("NA", "", s5e1$Line)
+s5e1$Chacater <- gsub("\\([^>]+\\)", "", s5e1$Chacater)
+s5e1$Chacater <- gsub("\\[[^>]+\\]", "", s5e1$Chacater)
+s5e1 <- as.data.frame(sapply(s5e1, trimws, which="both"))
+
+s5e2 <- read_csv("s5e2.csv")
+s5e2_args <- c(s5e2, sep=" ")
+s5e2$line <- do.call(paste, s5e2_args)
+s5e2 <- s5e2[,c("line")]
+s5e2$line <- iconv(s5e2$line, "", "ASCII", "byte")
+s5e2$line <- gsub("<92>", "", s5e2$line)
+s5e2 <- filter(s5e2, grepl(": ",line))
+s5e2 <- str_split_fixed(s5e2$line, ":", 2)
+colnames(s5e2) <- c("Chacater","Line")
+s5e2 <- as.data.frame(s5e2)
+s5e2$Line <- gsub("\\([^>]+\\)", "", s5e2$Line)
+s5e2$Line <- gsub("NA", "", s5e2$Line)
+s5e2$Chacater <- gsub("\\([^>]+\\)", "", s5e2$Chacater)
+s5e2$Chacater <- gsub("\\[[^>]+\\]", "", s5e2$Chacater)
+s5e2 <- as.data.frame(sapply(s5e2, trimws, which="both"))
+
+s5e3 <- read_csv("s5e3.csv")
+s5e3_args <- c(s5e3, sep=" ")
+s5e3$line <- do.call(paste, s5e3_args)
+s5e3 <- s5e3[,c("line")]
+s5e3$line <- iconv(s5e3$line, "", "ASCII", "byte")
+s5e3$line <- gsub("<92>", "", s5e3$line)
+s5e3 <- filter(s5e3, grepl(": ",line))
+s5e3 <- str_split_fixed(s5e3$line, ":", 2)
+colnames(s5e3) <- c("Chacater","Line")
+s5e3 <- as.data.frame(s5e3)
+s5e3$Line <- gsub("\\([^>]+\\)", "", s5e3$Line)
+s5e3$Line <- gsub("NA", "", s5e3$Line)
+s5e3$Chacater <- gsub("\\([^>]+\\)", "", s5e3$Chacater)
+s5e3$Chacater <- gsub("\\[[^>]+\\]", "", s5e3$Chacater)
+s5e3 <- as.data.frame(sapply(s5e3, trimws, which="both"))
+
+s5e4 <- read_csv("s5e4.csv")
+s5e4_args <- c(s5e4, sep=" ")
+s5e4$line <- do.call(paste, s5e4_args)
+s5e4 <- s5e4[,c("line")]
+s5e4$line <- iconv(s5e4$line, "", "ASCII", "byte")
+s5e4$line <- gsub("<92>", "", s5e4$line)
+s5e4 <- filter(s5e4, grepl(": ",line))
+s5e4 <- str_split_fixed(s5e4$line, ":", 2)
+colnames(s5e4) <- c("Chacater","Line")
+s5e4 <- as.data.frame(s5e4)
+s5e4$Line <- gsub("\\([^>]+\\)", "", s5e4$Line)
+s5e4$Line <- gsub("NA", "", s5e4$Line)
+s5e4$Chacater <- gsub("\\([^>]+\\)", "", s5e4$Chacater)
+s5e4$Chacater <- gsub("\\[[^>]+\\]", "", s5e4$Chacater)
+s5e4 <- as.data.frame(sapply(s5e4, trimws, which="both"))
+
+s5e5 <- read_csv("s5e5.csv")
+s5e5_args <- c(s5e5, sep=" ")
+s5e5$line <- do.call(paste, s5e5_args)
+s5e5 <- s5e5[,c("line")]
+s5e5$line <- iconv(s5e5$line, "", "ASCII", "byte")
+s5e5$line <- gsub("<92>", "", s5e5$line)
+s5e5 <- filter(s5e5, grepl(": ",line))
+s5e5 <- str_split_fixed(s5e5$line, ":", 2)
+colnames(s5e5) <- c("Chacater","Line")
+s5e5 <- as.data.frame(s5e5)
+s5e5$Line <- gsub("\\([^>]+\\)", "", s5e5$Line)
+s5e5$Line <- gsub("NA", "", s5e5$Line)
+s5e5$Chacater <- gsub("\\([^>]+\\)", "", s5e5$Chacater)
+s5e5$Chacater <- gsub("\\[[^>]+\\]", "", s5e5$Chacater)
+s5e5 <- as.data.frame(sapply(s5e5, trimws, which="both"))
+
+s5e6 <- read_csv("s5e6.csv")
+s5e6_args <- c(s5e6, sep=" ")
+s5e6$line <- do.call(paste, s5e6_args)
+s5e6 <- s5e6[,c("line")]
+s5e6$line <- iconv(s5e6$line, "", "ASCII", "byte")
+s5e6$line <- gsub("<92>", "", s5e6$line)
+s5e6 <- filter(s5e6, grepl(": ",line))
+s5e6 <- str_split_fixed(s5e6$line, ":", 2)
+colnames(s5e6) <- c("Chacater","Line")
+s5e6 <- as.data.frame(s5e6)
+s5e6$Line <- gsub("\\([^>]+\\)", "", s5e6$Line)
+s5e6$Line <- gsub("NA", "", s5e6$Line)
+s5e6$Chacater <- gsub("\\([^>]+\\)", "", s5e6$Chacater)
+s5e6$Chacater <- gsub("\\[[^>]+\\]", "", s5e6$Chacater)
+s5e6 <- as.data.frame(sapply(s5e6, trimws, which="both"))
+
+s5e7 <- read_csv("s5e7.csv")
+s5e7_args <- c(s5e7, sep=" ")
+s5e7$line <- do.call(paste, s5e7_args)
+s5e7 <- s5e7[,c("line")]
+s5e7$line <- iconv(s5e7$line, "", "ASCII", "byte")
+s5e7$line <- gsub("<92>", "", s5e7$line)
+s5e7 <- filter(s5e7, grepl(": ",line))
+s5e7 <- str_split_fixed(s5e7$line, ":", 2)
+colnames(s5e7) <- c("Chacater","Line")
+s5e7 <- as.data.frame(s5e7)
+s5e7$Line <- gsub("\\([^>]+\\)", "", s5e7$Line)
+s5e7$Line <- gsub("NA", "", s5e7$Line)
+s5e7$Chacater <- gsub("\\([^>]+\\)", "", s5e7$Chacater)
+s5e7$Chacater <- gsub("\\[[^>]+\\]", "", s5e7$Chacater)
+s5e7 <- as.data.frame(sapply(s5e7, trimws, which="both"))
+
+s5e8 <- read_csv("s5e8.csv")
+s5e8_args <- c(s5e8, sep=" ")
+s5e8$line <- do.call(paste, s5e8_args)
+s5e8 <- s5e8[,c("line")]
+s5e8$line <- iconv(s5e8$line, "", "ASCII", "byte")
+s5e8$line <- gsub("<92>", "", s5e8$line)
+s5e8 <- filter(s5e8, grepl(": ",line))
+s5e8 <- str_split_fixed(s5e8$line, ":", 2)
+colnames(s5e8) <- c("Chacater","Line")
+s5e8 <- as.data.frame(s5e8)
+s5e8$Line <- gsub("\\([^>]+\\)", "", s5e8$Line)
+s5e8$Line <- gsub("NA", "", s5e8$Line)
+s5e8$Chacater <- gsub("\\([^>]+\\)", "", s5e8$Chacater)
+s5e8$Chacater <- gsub("\\[[^>]+\\]", "", s5e8$Chacater)
+s5e8 <- as.data.frame(sapply(s5e8, trimws, which="both"))
+
+s5e9 <- read_csv("s5e9.csv")
+s5e9_args <- c(s5e9, sep=" ")
+s5e9$line <- do.call(paste, s5e9_args)
+s5e9 <- s5e9[,c("line")]
+s5e9$line <- iconv(s5e9$line, "", "ASCII", "byte")
+s5e9$line <- gsub("<92>", "", s5e9$line)
+s5e9 <- filter(s5e9, grepl(": ",line))
+s5e9 <- str_split_fixed(s5e9$line, ":", 2)
+colnames(s5e9) <- c("Chacater","Line")
+s5e9 <- as.data.frame(s5e9)
+s5e9$Line <- gsub("\\([^>]+\\)", "", s5e9$Line)
+s5e9$Line <- gsub("NA", "", s5e9$Line)
+s5e9$Chacater <- gsub("\\([^>]+\\)", "", s5e9$Chacater)
+s5e9$Chacater <- gsub("\\[[^>]+\\]", "", s5e9$Chacater)
+s5e9 <- as.data.frame(sapply(s5e9, trimws, which="both"))
+
+s5e10 <- read_csv("s5e10.csv")
+s5e10_args <- c(s5e10, sep=" ")
+s5e10$line <- do.call(paste, s5e10_args)
+s5e10 <- s5e10[,c("line")]
+s5e10$line <- iconv(s5e10$line, "", "ASCII", "byte")
+s5e10$line <- gsub("<92>", "", s5e10$line)
+s5e10 <- filter(s5e10, grepl(": ",line))
+s5e10 <- str_split_fixed(s5e10$line, ":", 2)
+colnames(s5e10) <- c("Chacater","Line")
+s5e10 <- as.data.frame(s5e10)
+s5e10$Line <- gsub("\\([^>]+\\)", "", s5e10$Line)
+s5e10$Line <- gsub("NA", "", s5e10$Line)
+s5e10$Chacater <- gsub("\\([^>]+\\)", "", s5e10$Chacater)
+s5e10$Chacater <- gsub("\\[[^>]+\\]", "", s5e10$Chacater)
+s5e10 <- as.data.frame(sapply(s5e10, trimws, which="both"))
+
+s2 <- rbind(s2e1, s2e2, s2e3)
+s4 <- rbind(s4e8, s4e9, s4e10)
+s5 <- rbind(s5e1, s5e2, s5e3, s5e4, s5e5, s5e6, s5e7, s5e8, s5e9, s5e10)
+
+```
+
+```{r s67, eval=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+
+s6e1 <- read_csv("s6e1.csv")
+s6e1_args <- c(s6e1, sep=" ")
+s6e1$line <- do.call(paste, s6e1_args)
+s6e1 <- s6e1[,c("line")]
+s6e1$line <- iconv(s6e1$line, "", "ASCII", "byte")
+s6e1$line <- gsub("<92>", "", s6e1$line)
+s6e1 <- filter(s6e1, grepl(": ",line))
+s6e1 <- str_split_fixed(s6e1$line, ":", 2)
+colnames(s6e1) <- c("Chacater","Line")
+s6e1 <- as.data.frame(s6e1)
+s6e1$Line <- gsub("\\([^>]+\\)", "", s6e1$Line)
+s6e1$Line <- gsub("NA", "", s6e1$Line)
+s6e1$Chacater <- gsub("\\([^>]+\\)", "", s6e1$Chacater)
+s6e1$Chacater <- gsub("\\[[^>]+\\]", "", s6e1$Chacater)
+s6e1 <- as.data.frame(sapply(s6e1, trimws, which="both"))
+
+s6e2 <- read_csv("s6e2.csv")
+s6e2_args <- c(s6e2, sep=" ")
+s6e2$line <- do.call(paste, s6e2_args)
+s6e2 <- s6e2[,c("line")]
+s6e2$line <- iconv(s6e2$line, "", "ASCII", "byte")
+s6e2$line <- gsub("<92>", "", s6e2$line)
+s6e2 <- filter(s6e2, grepl(": ",line))
+s6e2 <- str_split_fixed(s6e2$line, ":", 2)
+colnames(s6e2) <- c("Chacater","Line")
+s6e2 <- as.data.frame(s6e2)
+s6e2$Line <- gsub("\\([^>]+\\)", "", s6e2$Line)
+s6e2$Line <- gsub("NA", "", s6e2$Line)
+s6e2$Chacater <- gsub("\\([^>]+\\)", "", s6e2$Chacater)
+s6e2$Chacater <- gsub("\\[[^>]+\\]", "", s6e2$Chacater)
+s6e2 <- as.data.frame(sapply(s6e2, trimws, which="both"))
+
+s6e3 <- read_csv("s6e3.csv")
+s6e3_args <- c(s6e3, sep=" ")
+s6e3$line <- do.call(paste, s6e3_args)
+s6e3 <- s6e3[,c("line")]
+s6e3$line <- iconv(s6e3$line, "", "ASCII", "byte")
+s6e3$line <- gsub("<92>", "", s6e3$line)
+s6e3 <- filter(s6e3, grepl(": ",line))
+s6e3 <- str_split_fixed(s6e3$line, ":", 2)
+colnames(s6e3) <- c("Chacater","Line")
+s6e3 <- as.data.frame(s6e3)
+s6e3$Line <- gsub("\\([^>]+\\)", "", s6e3$Line)
+s6e3$Line <- gsub("NA", "", s6e3$Line)
+s6e3$Chacater <- gsub("\\([^>]+\\)", "", s6e3$Chacater)
+s6e3$Chacater <- gsub("\\[[^>]+\\]", "", s6e3$Chacater)
+s6e3 <- as.data.frame(sapply(s6e3, trimws, which="both"))
+
+s6e4 <- read_csv("s6e4.csv")
+s6e4_args <- c(s6e4, sep=" ")
+s6e4$line <- do.call(paste, s6e4_args)
+s6e4 <- s6e4[,c("line")]
+s6e4$line <- iconv(s6e4$line, "", "ASCII", "byte")
+s6e4$line <- gsub("<92>", "", s6e4$line)
+s6e4 <- filter(s6e4, grepl(": ",line))
+s6e4 <- str_split_fixed(s6e4$line, ":", 2)
+colnames(s6e4) <- c("Chacater","Line")
+s6e4 <- as.data.frame(s6e4)
+s6e4$Line <- gsub("\\([^>]+\\)", "", s6e4$Line)
+s6e4$Line <- gsub("NA", "", s6e4$Line)
+s6e4$Chacater <- gsub("\\([^>]+\\)", "", s6e4$Chacater)
+s6e4$Chacater <- gsub("\\[[^>]+\\]", "", s6e4$Chacater)
+s6e4 <- as.data.frame(sapply(s6e4, trimws, which="both"))
+
+s6e5 <- read_csv("s6e5.csv")
+s6e5_args <- c(s6e5, sep=" ")
+s6e5$line <- do.call(paste, s6e5_args)
+s6e5 <- s6e5[,c("line")]
+s6e5$line <- iconv(s6e5$line, "", "ASCII", "byte")
+s6e5$line <- gsub("<92>", "", s6e5$line)
+s6e5 <- filter(s6e5, grepl(": ",line))
+s6e5 <- str_split_fixed(s6e5$line, ":", 2)
+colnames(s6e5) <- c("Chacater","Line")
+s6e5 <- as.data.frame(s6e5)
+s6e5$Line <- gsub("\\([^>]+\\)", "", s6e5$Line)
+s6e5$Line <- gsub("NA", "", s6e5$Line)
+s6e5$Chacater <- gsub("\\([^>]+\\)", "", s6e5$Chacater)
+s6e5$Chacater <- gsub("\\[[^>]+\\]", "", s6e5$Chacater)
+s6e5 <- as.data.frame(sapply(s6e5, trimws, which="both"))
+
+s6e6 <- read_csv("s6e6.csv")
+s6e6_args <- c(s6e6, sep=" ")
+s6e6$line <- do.call(paste, s6e6_args)
+s6e6 <- s6e6[,c("line")]
+s6e6$line <- iconv(s6e6$line, "", "ASCII", "byte")
+s6e6$line <- gsub("<92>", "", s6e6$line)
+s6e6 <- filter(s6e6, grepl(": ",line))
+s6e6 <- str_split_fixed(s6e6$line, ":", 2)
+colnames(s6e6) <- c("Chacater","Line")
+s6e6 <- as.data.frame(s6e6)
+s6e6$Line <- gsub("\\([^>]+\\)", "", s6e6$Line)
+s6e6$Line <- gsub("NA", "", s6e6$Line)
+s6e6$Chacater <- gsub("\\([^>]+\\)", "", s6e6$Chacater)
+s6e6$Chacater <- gsub("\\[[^>]+\\]", "", s6e6$Chacater)
+s6e6 <- as.data.frame(sapply(s6e6, trimws, which="both"))
+
+s6e7 <- read_csv("s6e7.csv")
+s6e7_args <- c(s6e7, sep=" ")
+s6e7$line <- do.call(paste, s6e7_args)
+s6e7 <- s6e7[,c("line")]
+s6e7$line <- iconv(s6e7$line, "", "ASCII", "byte")
+s6e7$line <- gsub("<92>", "", s6e7$line)
+s6e7 <- filter(s6e7, grepl(": ",line))
+s6e7 <- str_split_fixed(s6e7$line, ":", 2)
+colnames(s6e7) <- c("Chacater","Line")
+s6e7 <- as.data.frame(s6e7)
+s6e7$Line <- gsub("\\([^>]+\\)", "", s6e7$Line)
+s6e7$Line <- gsub("NA", "", s6e7$Line)
+s6e7$Chacater <- gsub("\\([^>]+\\)", "", s6e7$Chacater)
+s6e7$Chacater <- gsub("\\[[^>]+\\]", "", s6e7$Chacater)
+s6e7 <- as.data.frame(sapply(s6e7, trimws, which="both"))
+
+s6e8 <- read_csv("s6e8.csv")
+s6e8_args <- c(s6e8, sep=" ")
+s6e8$line <- do.call(paste, s6e8_args)
+s6e8 <- s6e8[,c("line")]
+s6e8$line <- iconv(s6e8$line, "", "ASCII", "byte")
+s6e8$line <- gsub("<92>", "", s6e8$line)
+s6e8 <- filter(s6e8, grepl(": ",line))
+s6e8 <- str_split_fixed(s6e8$line, ":", 2)
+colnames(s6e8) <- c("Chacater","Line")
+s6e8 <- as.data.frame(s6e8)
+s6e8$Line <- gsub("\\([^>]+\\)", "", s6e8$Line)
+s6e8$Line <- gsub("NA", "", s6e8$Line)
+s6e8$Chacater <- gsub("\\([^>]+\\)", "", s6e8$Chacater)
+s6e8$Chacater <- gsub("\\[[^>]+\\]", "", s6e8$Chacater)
+s6e8 <- as.data.frame(sapply(s6e8, trimws, which="both"))
+
+s6e9 <- read_csv("s6e9.csv")
+s6e9_args <- c(s6e9, sep=" ")
+s6e9$line <- do.call(paste, s6e9_args)
+s6e9 <- s6e9[,c("line")]
+s6e9$line <- iconv(s6e9$line, "", "ASCII", "byte")
+s6e9$line <- gsub("<92>", "", s6e9$line)
+s6e9 <- filter(s6e9, grepl(": ",line))
+s6e9 <- str_split_fixed(s6e9$line, ":", 2)
+colnames(s6e9) <- c("Chacater","Line")
+s6e9 <- as.data.frame(s6e9)
+s6e9$Line <- gsub("\\([^>]+\\)", "", s6e9$Line)
+s6e9$Line <- gsub("NA", "", s6e9$Line)
+s6e9$Chacater <- gsub("\\([^>]+\\)", "", s6e9$Chacater)
+s6e9$Chacater <- gsub("\\[[^>]+\\]", "", s6e9$Chacater)
+s6e9 <- as.data.frame(sapply(s6e9, trimws, which="both"))
+
+s6e10 <- read_csv("s6e10.csv")
+s6e10_args <- c(s6e10, sep=" ")
+s6e10$line <- do.call(paste, s6e10_args)
+s6e10 <- s6e10[,c("line")]
+s6e10$line <- iconv(s6e10$line, "", "ASCII", "byte")
+s6e10$line <- gsub("<92>", "", s6e10$line)
+s6e10 <- filter(s6e10, grepl(": ",line))
+s6e10 <- str_split_fixed(s6e10$line, ":", 2)
+colnames(s6e10) <- c("Chacater","Line")
+s6e10 <- as.data.frame(s6e10)
+s6e10$Line <- gsub("\\([^>]+\\)", "", s6e10$Line)
+s6e10$Line <- gsub("NA", "", s6e10$Line)
+s6e10$Chacater <- gsub("\\([^>]+\\)", "", s6e10$Chacater)
+s6e10$Chacater <- gsub("\\[[^>]+\\]", "", s6e10$Chacater)
+s6e10 <- as.data.frame(sapply(s6e10, trimws, which="both"))
+
+s7e1 <- read_csv("s7e1.csv")
+s7e1_args <- c(s7e1, sep=" ")
+s7e1$line <- do.call(paste, s7e1_args)
+s7e1 <- s7e1[,c("line")]
+s7e1$line <- iconv(s7e1$line, "", "ASCII", "byte")
+s7e1$line <- gsub("<92>", "", s7e1$line)
+s7e1 <- filter(s7e1, grepl(": ",line))
+s7e1 <- str_split_fixed(s7e1$line, ":", 2)
+colnames(s7e1) <- c("Chacater","Line")
+s7e1 <- as.data.frame(s7e1)
+s7e1$Line <- gsub("\\([^>]+\\)", "", s7e1$Line)
+s7e1$Line <- gsub("NA", "", s7e1$Line)
+s7e1$Chacater <- gsub("\\([^>]+\\)", "", s7e1$Chacater)
+s7e1$Chacater <- gsub("\\[[^>]+\\]", "", s7e1$Chacater)
+s7e1 <- as.data.frame(sapply(s7e1, trimws, which="both"))
+
+s7e2 <- read_csv("s7e2.csv")
+s7e2_args <- c(s7e2, sep=" ")
+s7e2$line <- do.call(paste, s7e2_args)
+s7e2 <- s7e2[,c("line")]
+s7e2$line <- iconv(s7e2$line, "", "ASCII", "byte")
+s7e2$line <- gsub("<92>", "", s7e2$line)
+s7e2 <- filter(s7e2, grepl(": ",line))
+s7e2 <- str_split_fixed(s7e2$line, ":", 2)
+colnames(s7e2) <- c("Chacater","Line")
+s7e2 <- as.data.frame(s7e2)
+s7e2$Line <- gsub("\\([^>]+\\)", "", s7e2$Line)
+s7e2$Line <- gsub("NA", "", s7e2$Line)
+s7e2$Chacater <- gsub("\\([^>]+\\)", "", s7e2$Chacater)
+s7e2$Chacater <- gsub("\\[[^>]+\\]", "", s7e2$Chacater)
+s7e2 <- as.data.frame(sapply(s7e2, trimws, which="both"))
+
+s7e3 <- read_csv("s7e3.csv")
+s7e3_args <- c(s7e3, sep=" ")
+s7e3$line <- do.call(paste, s7e3_args)
+s7e3 <- s7e3[,c("line")]
+s7e3$line <- iconv(s7e3$line, "", "ASCII", "byte")
+s7e3$line <- gsub("<92>", "", s7e3$line)
+s7e3 <- filter(s7e3, grepl(": ",line))
+s7e3 <- str_split_fixed(s7e3$line, ":", 2)
+colnames(s7e3) <- c("Chacater","Line")
+s7e3 <- as.data.frame(s7e3)
+s7e3$Line <- gsub("\\([^>]+\\)", "", s7e3$Line)
+s7e3$Line <- gsub("NA", "", s7e3$Line)
+s7e3$Chacater <- gsub("\\([^>]+\\)", "", s7e3$Chacater)
+s7e3$Chacater <- gsub("\\[[^>]+\\]", "", s7e3$Chacater)
+s7e3 <- as.data.frame(sapply(s7e3, trimws, which="both"))
+
+s7e4 <- read_csv("s7e4.csv")
+s7e4_args <- c(s7e4, sep=" ")
+s7e4$line <- do.call(paste, s7e4_args)
+s7e4 <- s7e4[,c("line")]
+s7e4$line <- iconv(s7e4$line, "", "ASCII", "byte")
+s7e4$line <- gsub("<92>", "", s7e4$line)
+s7e4 <- filter(s7e4, grepl(": ",line))
+s7e4 <- str_split_fixed(s7e4$line, ":", 2)
+colnames(s7e4) <- c("Chacater","Line")
+s7e4 <- as.data.frame(s7e4)
+s7e4$Line <- gsub("\\([^>]+\\)", "", s7e4$Line)
+s7e4$Line <- gsub("NA", "", s7e4$Line)
+s7e4$Chacater <- gsub("\\([^>]+\\)", "", s7e4$Chacater)
+s7e4$Chacater <- gsub("\\[[^>]+\\]", "", s7e4$Chacater)
+s7e4 <- as.data.frame(sapply(s7e4, trimws, which="both"))
+
+s7e5 <- read_csv("s7e5.csv")
+s7e5_args <- c(s7e5, sep=" ")
+s7e5$line <- do.call(paste, s7e5_args)
+s7e5 <- s7e5[,c("line")]
+s7e5$line <- iconv(s7e5$line, "", "ASCII", "byte")
+s7e5$line <- gsub("<92>", "", s7e5$line)
+s7e5 <- filter(s7e5, grepl(": ",line))
+s7e5 <- str_split_fixed(s7e5$line, ":", 2)
+colnames(s7e5) <- c("Chacater","Line")
+s7e5 <- as.data.frame(s7e5)
+s7e5$Line <- gsub("\\([^>]+\\)", "", s7e5$Line)
+s7e5$Line <- gsub("NA", "", s7e5$Line)
+s7e5$Chacater <- gsub("\\([^>]+\\)", "", s7e5$Chacater)
+s7e5$Chacater <- gsub("\\[[^>]+\\]", "", s7e5$Chacater)
+s7e5 <- as.data.frame(sapply(s7e5, trimws, which="both"))
+
+s7e6 <- read_csv("s7e6.csv")
+s7e6_args <- c(s7e6, sep=" ")
+s7e6$line <- do.call(paste, s7e6_args)
+s7e6 <- s7e6[,c("line")]
+s7e6$line <- iconv(s7e6$line, "", "ASCII", "byte")
+s7e6$line <- gsub("<92>", "", s7e6$line)
+s7e6 <- filter(s7e6, grepl(": ",line))
+s7e6 <- str_split_fixed(s7e6$line, ":", 2)
+colnames(s7e6) <- c("Chacater","Line")
+s7e6 <- as.data.frame(s7e6)
+s7e6$Line <- gsub("\\([^>]+\\)", "", s7e6$Line)
+s7e6$Line <- gsub("NA", "", s7e6$Line)
+s7e6$Chacater <- gsub("\\([^>]+\\)", "", s7e6$Chacater)
+s7e6$Chacater <- gsub("\\[[^>]+\\]", "", s7e6$Chacater)
+s7e6 <- as.data.frame(sapply(s7e6, trimws, which="both"))
+
+
+s6 <- rbind(s6e1, s6e2, s6e3, s6e4, s6e5, s6e6, s6e7, s6e8, s6e9, s6e10)
+s7 <- rbind(s7e1, s7e2, s7e3, s7e4, s7e5, s7e6)
+
+got_lines <- rbind(s2, s4, s5, s6, s7)
+write_csv(got_lines, "got_lines.csv")
+
+colnames(got_lines) <- c("Character", "Line")
+```
+
+```{r prep, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+got_lines <- read_csv("got_lines.csv")
+
+characters <- as.data.frame(unique(got_lines$Character))
+colnames(characters) <- c("Character")
+
+char_death <- read_csv("character-deaths.csv")
+char_gender <- str_split_fixed(char_death$Name, " ", 2)
+colnames(char_gender) <- c("FName","LName")
+char_gender <- as.data.frame(char_gender)
+char_gender <- cbind(char_gender, char_death[,c("Gender")])
+char_gender$Gender <- ifelse(char_gender$Gender == 1, "Male", "Female")
+char_gender$FName <- toupper(char_gender$FName)
+char_gender$LName <- toupper(char_gender$LName)
+char_gender <- char_gender[!duplicated(char_gender$FName, fromLast = T),]
+
+got_lines2 <- merge(x=got_lines, y=char_gender, by.x="Character", by.y="FName")
+got_lines2$Chacater <- gsub("\\[[^>]+\\]", "", got_lines2$Line)
+
+#modified stem completion function
+stemCompletion_mod <- function(x,dict=dictCorpus) {
+ PlainTextDocument(stripWhitespace(paste(stemCompletion(unlist(strsplit(as.character(x)," ")),dictionary=dict, type="shortest"),sep="", collapse=" ")))
+}
+
+
+unwanted_word <- c("youre","dont","ive","cant","get","must","hes","hers","wont","youd","wasnt","theyd","shouldnt","can","thats","youve","theres","thatll")
+
+clean_corpus <- function(corpus){
+     corpus <- tm_map(corpus, content_transformer(function(x) iconv(enc2utf8(x), sub = "byte")))
+     corpus <- tm_map(corpus, content_transformer(tolower))
+     corpus <- tm_map(corpus, content_transformer(replace_symbol))
+     corpus <- tm_map(corpus, removeWords, stopwords("en"))
+     corpus <- tm_map(corpus, removeWords, unwanted_word)
+     corpus <- tm_map(corpus, removeNumbers)     
+     corpus <- tm_map(corpus, removePunctuation)
+     corpus <- tm_map(corpus, stripWhitespace)
+     return(corpus)
+ }
+
+
+```
+
+```{r viz1, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=8, fig.height=8}
+male_Lines <- filter(got_lines2, Gender=="Male")
+female_Lines <- filter(got_lines2, Gender=="Female")
+
+maleL <- paste(male_Lines$Line, collapse =" ")
+femaleL <- paste(female_Lines$Line, collapse =" ")
+
+words <- data.frame(text = c(maleL, femaleL))
+
+words_corpus <- VCorpus(VectorSource(words$text))
+#words_corpus <- tm_map(words_corpus, removeNumbers)
+#words_corpus <- tm_map(words_corpus, removePunctuation)
+#words_corpus <- tm_map(words_corpus, removeWords, stopwords("en"))
+#words_corpus <- tm_map(words_corpus, stripWhitespace)
+
+words_corpus <- clean_corpus(words_corpus)
+word_corpus_dict <- words_corpus
+words_corpus <- tm_map(words_corpus, stemDocument)
+words_corpus_2 <- lapply(words_corpus, stemCompletion_mod, dict=word_corpus_dict)
+
+words_corpus_2 <- VCorpus(VectorSource(words_corpus_2))
+words_corpus_2_tdm <- TermDocumentMatrix(words_corpus_2)
+words_corpus_2_m <- as.matrix(words_corpus_2_tdm)
+colnames(words_corpus_2_m) <- c("Male", "Female")
+
+write.table(words_corpus_2_m,file="words_corpus_2_m.txt")
+#words_corpus_2_m2 <- read.table("words_corpus_2_m.txt",header=TRUE,row.names=1)
+#words_corpus_2_m2 <- as.matrix(words_corpus_2_m2)
+#par(bg="black")
+#set.seed(2078)
+#comparison.cloud(words_corpus_2_m2, colors = c("orange", "chartreuse"), 
+#                title.size= 1, min.freq=20, 
+#                 max.words = 100)
+```
+
+```{r viz2, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+
+char_screen_time <- read_csv("charScreenT.csv")
+char_death$Name1 <- gsub("\\([^>]+\\)", "", char_death$Name)
+
+char_screen_time <- merge(char_screen_time, char_death, by.x="actor", by.y="Name1")
+char_screen_time$Gender <- ifelse(char_screen_time$Gender == 1, "Male", "Female")
+char_screen_time <- char_screen_time[,c(1,2,3,4,5,6,7,8,15)]
+
+char_screen_time <- melt(char_screen_time, id=c("actor","Gender"))
+colnames(char_screen_time) <- c("Character", "Gender", "Season", "Time")
+
+data_1 <- char_screen_time %>%
+ group_by(Gender,Season) %>%
+ summarise(time=sum(Time))
+
+my_fun <- function(vec){ as.numeric(vec[3]) / sum(data_1$time[data_1$Season==vec[2]]) *100 }
+ 
+data_1$prop <- apply(data_1 , 1 , my_fun)
+
+season <- str_split_fixed(data_1$Season, " ", 2)
+
+season <- as.data.frame(season)
+data_1$season_no <- season$V2
+
+
+plot_ST <- ggplot(data_1, aes(x=as.numeric(season_no), y=prop, fill=Gender) ) +
+    geom_area(position='stack' ) + scale_x_continuous(breaks = c(1,2,3,4,5,6,7), labels = c("Season 1", "Season 2", "Season 3", "Season 4", "Season 5","Season 6", "Season 7")) + labs(title="ScreenTime sharing between male and female characters", 
+       x = "", 
+       y = "Screen Time (Percentage)") + 
+  theme_minimal() + theme(plot.background = element_rect(fill = "gray27"), 
+                          axis.text.x = element_text(angle = 45, hjust = 1, colour = "white"),
+                          axis.text.y = element_text(color="white"),
+                          plot.title = element_text(color="white", size=14, face="bold"),
+                          axis.title = element_text(color="white"),
+                          legend.title = element_text(color = "white", size=12),
+                          legend.text = element_text(color="white")) +
+   scale_fill_manual(values = alpha(c("cyan", "firebrick1"), .3))
+#plot_ST
+```
+
+```{r viz3, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+CharLinesCount <- got_lines2 %>%
+  group_by(Character, Gender) %>%
+  summarise(NoOfLines=n())
+
+Top5MaleCharacters <- filter(CharLinesCount, Gender=="Male")
+Top5MaleCharacters <- head(arrange(Top5MaleCharacters, desc(NoOfLines)), 5)
+Top5FemaleCharacters <- filter(CharLinesCount, Gender=="Female")
+Top5FemaleCharacters <- head(arrange(Top5FemaleCharacters, desc(NoOfLines)), 5)
+
+#CERSEI
+CERSEI_corpus <- VCorpus(VectorSource(filter(got_lines2, Character=="CERSEI")$Line))
+#CERSEI_corpus <- tm_map(CERSEI_corpus, removePunctuation)
+#CERSEI_corpus <- tm_map(CERSEI_corpus, removeNumbers)
+#CERSEI_corpus <- tm_map(CERSEI_corpus, removeWords, stopwords("en"))
+#CERSEI_corpus <- tm_map(CERSEI_corpus, stripWhitespace)
+
+CERSEI_corpus <- clean_corpus(CERSEI_corpus)
+CERSEI_corpus_2 <- tm_map(CERSEI_corpus, stemDocument)
+CERSEI_corpus_2 <- lapply(CERSEI_corpus_2, stemCompletion_mod, dict=CERSEI_corpus)
+CERSEI_corpus_2 <- VCorpus(VectorSource(CERSEI_corpus_2))
+CERSEI_corpus_2_dtm <- DocumentTermMatrix(CERSEI_corpus_2)
+CERSEI_corpus_2_m <- as.matrix(CERSEI_corpus_2_dtm)
+CERSEI_corpus_2_v <- sort(colSums(CERSEI_corpus_2_m),decreasing=TRUE)
+CERSEI_corpus_2_d <- data.frame(word=names(CERSEI_corpus_2_v),freq=CERSEI_corpus_2_v)
+
+#DAENERYS
+DAENERYS_corpus <- VCorpus(VectorSource(filter(got_lines2, Character=="DAENERYS")$Line))
+#DAENERYS_corpus <- tm_map(DAENERYS_corpus, removePunctuation)
+#DAENERYS_corpus <- tm_map(DAENERYS_corpus, removeNumbers)
+#DAENERYS_corpus <- tm_map(DAENERYS_corpus, removeWords, stopwords("en"))
+#DAENERYS_corpus <- tm_map(DAENERYS_corpus, stripWhitespace)
+
+DAENERYS_corpus <- clean_corpus(DAENERYS_corpus)
+DAENERYS_corpus_2 <- tm_map(DAENERYS_corpus, stemDocument)
+DAENERYS_corpus_2 <- lapply(DAENERYS_corpus_2, stemCompletion_mod, dict=DAENERYS_corpus)
+DAENERYS_corpus_2 <- VCorpus(VectorSource(DAENERYS_corpus_2))
+DAENERYS_corpus_2_dtm <- DocumentTermMatrix(DAENERYS_corpus_2)
+DAENERYS_corpus_2_m <- as.matrix(DAENERYS_corpus_2_dtm)
+DAENERYS_corpus_2_v <- sort(colSums(DAENERYS_corpus_2_m),decreasing=TRUE)
+DAENERYS_corpus_2_d <- data.frame(word=names(DAENERYS_corpus_2_v),freq=DAENERYS_corpus_2_v)
+
+#SANSA
+SANSA_corpus <- VCorpus(VectorSource(filter(got_lines2, Character=="SANSA")$Line))
+#SANSA_corpus <- tm_map(SANSA_corpus, removePunctuation)
+#SANSA_corpus <- tm_map(SANSA_corpus, removeNumbers)
+#SANSA_corpus <- tm_map(SANSA_corpus, removeWords, stopwords("en"))
+#SANSA_corpus <- tm_map(SANSA_corpus, stripWhitespace)
+
+SANSA_corpus <- clean_corpus(SANSA_corpus)
+SANSA_corpus_2 <- tm_map(SANSA_corpus, stemDocument)
+SANSA_corpus_2 <- lapply(SANSA_corpus_2, stemCompletion_mod, dict=SANSA_corpus)
+SANSA_corpus_2 <- VCorpus(VectorSource(SANSA_corpus_2))
+SANSA_corpus_2_dtm <- DocumentTermMatrix(SANSA_corpus_2)
+SANSA_corpus_2_m <- as.matrix(SANSA_corpus_2_dtm)
+SANSA_corpus_2_v <- sort(colSums(SANSA_corpus_2_m),decreasing=TRUE)
+SANSA_corpus_2_d <- data.frame(word=names(SANSA_corpus_2_v),freq=SANSA_corpus_2_v)
+
+#ARYA
+ARYA_corpus <- VCorpus(VectorSource(filter(got_lines2, Character=="ARYA")$Line))
+#ARYA_corpus <- tm_map(ARYA_corpus, removePunctuation)
+#ARYA_corpus <- tm_map(ARYA_corpus, removeNumbers)
+#ARYA_corpus <- tm_map(ARYA_corpus, removeWords, stopwords("en"))
+#ARYA_corpus <- tm_map(ARYA_corpus, stripWhitespace)
+
+ARYA_corpus <- clean_corpus(ARYA_corpus)
+ARYA_corpus_2 <- tm_map(ARYA_corpus, stemDocument)
+ARYA_corpus_2 <- lapply(ARYA_corpus_2, stemCompletion_mod, dict=ARYA_corpus)
+ARYA_corpus_2 <- VCorpus(VectorSource(ARYA_corpus_2))
+ARYA_corpus_2_dtm <- DocumentTermMatrix(ARYA_corpus_2)
+ARYA_corpus_2_m <- as.matrix(ARYA_corpus_2_dtm)
+ARYA_corpus_2_v <- sort(colSums(ARYA_corpus_2_m),decreasing=TRUE)
+ARYA_corpus_2_d <- data.frame(word=names(ARYA_corpus_2_v),freq=ARYA_corpus_2_v)
+
+#BRIENNE
+BRIENNE_corpus <- VCorpus(VectorSource(filter(got_lines2, Character=="BRIENNE")$Line))
+#BRIENNE_corpus <- tm_map(BRIENNE_corpus, removePunctuation)
+#BRIENNE_corpus <- tm_map(BRIENNE_corpus, removeNumbers)
+#BRIENNE_corpus <- tm_map(BRIENNE_corpus, removeWords, stopwords("en"))
+#BRIENNE_corpus <- tm_map(BRIENNE_corpus, stripWhitespace)
+
+BRIENNE_corpus <- clean_corpus(BRIENNE_corpus)
+BRIENNE_corpus_2 <- tm_map(BRIENNE_corpus, stemDocument)
+BRIENNE_corpus_2 <- lapply(BRIENNE_corpus_2, stemCompletion_mod, dict=BRIENNE_corpus)
+BRIENNE_corpus_2 <- VCorpus(VectorSource(BRIENNE_corpus_2))
+BRIENNE_corpus_2_dtm <- DocumentTermMatrix(BRIENNE_corpus_2)
+BRIENNE_corpus_2_m <- as.matrix(BRIENNE_corpus_2_dtm)
+BRIENNE_corpus_2_v <- sort(colSums(BRIENNE_corpus_2_m),decreasing=TRUE)
+BRIENNE_corpus_2_d <- data.frame(word=names(BRIENNE_corpus_2_v),freq=BRIENNE_corpus_2_v)
+
+#TYRION
+TYRION_corpus <- VCorpus(VectorSource(filter(got_lines2, Character=="TYRION")$Line))
+#TYRION_corpus <- tm_map(TYRION_corpus, removePunctuation)
+#TYRION_corpus <- tm_map(TYRION_corpus, removeNumbers)
+#TYRION_corpus <- tm_map(TYRION_corpus, removeWords, stopwords("en"))
+#TYRION_corpus <- tm_map(TYRION_corpus, stripWhitespace)
+
+TYRION_corpus <- clean_corpus(TYRION_corpus)
+TYRION_corpus_2 <- tm_map(TYRION_corpus, stemDocument)
+TYRION_corpus_2 <- lapply(TYRION_corpus_2, stemCompletion_mod, dict=TYRION_corpus)
+TYRION_corpus_2 <- VCorpus(VectorSource(TYRION_corpus_2))
+TYRION_corpus_2_dtm <- DocumentTermMatrix(TYRION_corpus_2)
+TYRION_corpus_2_m <- as.matrix(TYRION_corpus_2_dtm)
+TYRION_corpus_2_v <- sort(colSums(TYRION_corpus_2_m),decreasing=TRUE)
+TYRION_corpus_2_d <- data.frame(word=names(TYRION_corpus_2_v),freq=TYRION_corpus_2_v)
+
+#JON
+JON_corpus <- VCorpus(VectorSource(filter(got_lines2, Character=="JON")$Line))
+#JON_corpus <- tm_map(JON_corpus, removePunctuation)
+#JON_corpus <- tm_map(JON_corpus, removeNumbers)
+#JON_corpus <- tm_map(JON_corpus, removeWords, stopwords("en"))
+#JON_corpus <- tm_map(JON_corpus, stripWhitespace)
+
+JON_corpus <- clean_corpus(JON_corpus)
+JON_corpus_2 <- tm_map(JON_corpus, stemDocument)
+JON_corpus_2 <- lapply(JON_corpus_2, stemCompletion_mod, dict=JON_corpus)
+JON_corpus_2 <- VCorpus(VectorSource(JON_corpus_2))
+JON_corpus_2_dtm <- DocumentTermMatrix(JON_corpus_2)
+JON_corpus_2_m <- as.matrix(JON_corpus_2_dtm)
+JON_corpus_2_v <- sort(colSums(JON_corpus_2_m),decreasing=TRUE)
+JON_corpus_2_d <- data.frame(word=names(JON_corpus_2_v),freq=JON_corpus_2_v)
+
+#JAIME
+JAIME_corpus <- VCorpus(VectorSource(filter(got_lines2, Character=="JAIME")$Line))
+#JAIME_corpus <- tm_map(JAIME_corpus, removePunctuation)
+#JAIME_corpus <- tm_map(JAIME_corpus, removeNumbers)
+#JAIME_corpus <- tm_map(JAIME_corpus, removeWords, stopwords("en"))
+#JAIME_corpus <- tm_map(JAIME_corpus, stripWhitespace)
+
+JAIME_corpus <- clean_corpus(JAIME_corpus)
+JAIME_corpus_2 <- tm_map(JAIME_corpus, stemDocument)
+JAIME_corpus_2 <- lapply(JAIME_corpus_2, stemCompletion_mod, dict=JAIME_corpus)
+JAIME_corpus_2 <- VCorpus(VectorSource(JAIME_corpus_2))
+JAIME_corpus_2_dtm <- DocumentTermMatrix(JAIME_corpus_2)
+JAIME_corpus_2_m <- as.matrix(JAIME_corpus_2_dtm)
+JAIME_corpus_2_v <- sort(colSums(JAIME_corpus_2_m),decreasing=TRUE)
+JAIME_corpus_2_d <- data.frame(word=names(JAIME_corpus_2_v),freq=JAIME_corpus_2_v)
+
+#DAVOS
+DAVOS_corpus <- VCorpus(VectorSource(filter(got_lines2, Character=="DAVOS")$Line))
+#DAVOS_corpus <- tm_map(DAVOS_corpus, removePunctuation)
+#DAVOS_corpus <- tm_map(DAVOS_corpus, removeNumbers)
+#DAVOS_corpus <- tm_map(DAVOS_corpus, removeWords, stopwords("en"))
+#DAVOS_corpus <- tm_map(DAVOS_corpus, stripWhitespace)
+
+DAVOS_corpus <- clean_corpus(DAVOS_corpus)
+DAVOS_corpus_2 <- tm_map(DAVOS_corpus, stemDocument)
+DAVOS_corpus_2 <- lapply(DAVOS_corpus_2, stemCompletion_mod, dict=DAVOS_corpus)
+DAVOS_corpus_2 <- VCorpus(VectorSource(DAVOS_corpus_2))
+DAVOS_corpus_2_dtm <- DocumentTermMatrix(DAVOS_corpus_2)
+DAVOS_corpus_2_m <- as.matrix(DAVOS_corpus_2_dtm)
+DAVOS_corpus_2_v <- sort(colSums(DAVOS_corpus_2_m),decreasing=TRUE)
+DAVOS_corpus_2_d <- data.frame(word=names(DAVOS_corpus_2_v),freq=DAVOS_corpus_2_v)
+
+#RAMSAY
+RAMSAY_corpus <- VCorpus(VectorSource(filter(got_lines2, Character=="RAMSAY")$Line))
+#RAMSAY_corpus <- tm_map(RAMSAY_corpus, removePunctuation)
+#RAMSAY_corpus <- tm_map(RAMSAY_corpus, removeNumbers)
+#RAMSAY_corpus <- tm_map(RAMSAY_corpus, removeWords, stopwords("en"))
+#RAMSAY_corpus <- tm_map(RAMSAY_corpus, stripWhitespace)
+
+RAMSAY_corpus <- clean_corpus(RAMSAY_corpus)
+RAMSAY_corpus_2 <- tm_map(RAMSAY_corpus, stemDocument)
+RAMSAY_corpus_2 <- lapply(RAMSAY_corpus_2, stemCompletion_mod, dict=RAMSAY_corpus)
+RAMSAY_corpus_2 <- VCorpus(VectorSource(RAMSAY_corpus_2))
+RAMSAY_corpus_2_dtm <- DocumentTermMatrix(RAMSAY_corpus_2)
+RAMSAY_corpus_2_m <- as.matrix(RAMSAY_corpus_2_dtm)
+RAMSAY_corpus_2_v <- sort(colSums(RAMSAY_corpus_2_m),decreasing=TRUE)
+RAMSAY_corpus_2_d <- data.frame(word=names(RAMSAY_corpus_2_v),freq=RAMSAY_corpus_2_v)
+
+write_csv(CERSEI_corpus_2_d, "CERSEI_corpus_2_d.csv")
+write_csv(DAENERYS_corpus_2_d, "DAENERYS_corpus_2_d.csv")
+write_csv(SANSA_corpus_2_d, "SANSA_corpus_2_d.csv")
+write_csv(ARYA_corpus_2_d, "ARYA_corpus_2_d.csv")
+write_csv(BRIENNE_corpus_2_d, "BRIENNE_corpus_2_d.csv")
+write_csv(TYRION_corpus_2_d, "TYRION_corpus_2_d.csv")
+write_csv(JON_corpus_2_d, "JON_corpus_2_d.csv")
+write_csv(JAIME_corpus_2_d, "JAIME_corpus_2_d.csv")
+write_csv(DAVOS_corpus_2_d, "DAVOS_corpus_2_d.csv")
+write_csv(RAMSAY_corpus_2_d, "RAMSAY_corpus_2_d.csv")
+
+```
+
+```{r importWordsDF_M, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+words_corpus_2_m <- read.table("words_corpus_2_m.txt",header=TRUE,row.names=1)
+words_corpus_2_m <- as.matrix(words_corpus_2_m)
+CERSEI_corpus_2_d <-read_csv("CERSEI_corpus_2_d.csv")
+DAENERYS_corpus_2_d <-read_csv("DAENERYS_corpus_2_d.csv")
+SANSA_corpus_2_d <-read_csv("SANSA_corpus_2_d.csv")
+ARYA_corpus_2_d <-read_csv("ARYA_corpus_2_d.csv")
+BRIENNE_corpus_2_d <-read_csv("BRIENNE_corpus_2_d.csv")
+TYRION_corpus_2_d <-read_csv("TYRION_corpus_2_d.csv")
+JON_corpus_2_d <-read_csv("JON_corpus_2_d.csv")
+JAIME_corpus_2_d <-read_csv("JAIME_corpus_2_d.csv")
+DAVOS_corpus_2_d <-read_csv("DAVOS_corpus_2_d.csv")
+RAMSAY_corpus_2_d <-read_csv("RAMSAY_corpus_2_d.csv")
+```
+
+```{r viz4, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+
+GOT_ScreenTimes <- read_csv("GOT_screentimes.csv")
+GOT_ScreenTimes1 <- merge(GOT_ScreenTimes, char_death, by.x = "name", by.y = "Name1")
+GOT_ScreenTimes1 <- GOT_ScreenTimes1[, c("name", "screentime", "episodes", "Gender")]
+GOT_ScreenTimes1$Gender <- ifelse(GOT_ScreenTimes1$Gender == 1, "Male", "Female")
+
+GOT_Top15ST <- head(arrange(GOT_ScreenTimes1, desc(screentime)), 15)
+GOT_Top15EP <- head(arrange(filter(GOT_ScreenTimes1, episodes != "unspecified"), desc(as.numeric(episodes))), 15)
+
+plot_STChr <- ggplot(GOT_Top15ST, aes(y=as.numeric(screentime), x=reorder(name,as.numeric(screentime),desc), fill=Gender) ) +
+    geom_bar(position="dodge", stat="identity") + 
+    labs(title="Screen Time for individual characters", 
+       x = "", 
+       y = "Screen Time") + 
+    theme_minimal() + theme(plot.background = element_rect(fill = "gray27"), 
+                          axis.text.x = element_text(angle = 45, hjust = 1, colour = "white"),
+                          axis.text.y = element_text(color="white"),
+                          plot.title = element_text(color="white", size=14, face="bold"),
+                          axis.title = element_text(color="white"),
+                          legend.title = element_text(color = "white", size=12),
+                          legend.text = element_text(color="white"))
+
+plot_EPChr <- ggplot(GOT_Top15EP, aes(y=as.numeric(episodes), x=reorder(name,as.numeric(episodes),desc), fill=Gender) ) +
+    geom_bar(position="dodge", stat="identity") + 
+    labs(title="Number of episodes for individual characters", 
+       x = "", 
+       y = "Number of Episodes") + 
+    theme_minimal() + theme(plot.background = element_rect(fill = "gray27"), 
+                          axis.text.x = element_text(angle = 45, hjust = 1, colour = "white"),
+                          axis.text.y = element_text(color="white"),
+                          plot.title = element_text(color="white", size=14, face="bold"),
+                          axis.title = element_text(color="white"),
+                          legend.title = element_text(color = "white", size=12),
+                          legend.text = element_text(color="white"))
+
+#plot_STChr
+#plot_EPChr
+```
+
+```{r viz5, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+
+Function <- function(x){
+tidy_character <- x %>%
+unnest(word = as.character(word),freq)
+
+sentiment_frame <- tidy_character %>%
+inner_join(get_sentiments("nrc"))
+
+group_sentiment <- sentiment_frame %>%
+group_by(sentiment) %>%
+summarise(count=sum(freq))
+
+return(group_sentiment)}
+
+#CERSEI
+df_cersei <- Function(CERSEI_corpus_2_d)
+plot_cersei <- ggplot(df_cersei, aes(x=reorder(sentiment,count,desc),y=count, fill=sentiment, color=sentiment)) + geom_point(size=2, aes(text=sprintf("Sentiment: %s<br>Word Count: %s", sentiment, count))) + geom_bar(stat="identity", width = 0.008) + 
+      labs(title="", 
+       x = "", 
+       y = "") +
+      theme_dark() + theme(plot.background = element_rect(fill = "gray27"),  
+                          axis.text.x = element_text(angle = 45, hjust = 1, colour = "white"),
+                          axis.text.y = element_text(color="white"),
+                          plot.title = element_text(color="white", size=14, face="bold"),
+                          axis.title = element_text(color="white"),
+                          legend.title = element_text(color = "white", size=12),
+                          legend.text = element_text(color="white"),
+                          legend.background = element_rect("gray27"))
+#ggplotly(plot_cersei)
+
+#DAENERYS
+df_daenerys <- Function(DAENERYS_corpus_2_d)
+plot_daenerys <- ggplot(df_daenerys, aes(x=reorder(sentiment,count,desc),y=count, fill=sentiment, color=sentiment)) + geom_point(size=2, aes(text=sprintf("Sentiment: %s<br>Word Count: %s", sentiment, count))) + geom_bar(stat="identity", width = 0.008) + labs(title="", x = "", y = "") + theme_dark() + 
+  theme(plot.background = element_rect(fill = "gray27"),  
+                          axis.text.x = element_text(angle = 45, hjust = 1, colour = "white"),
+                          axis.text.y = element_text(color="white"),
+                          plot.title = element_text(color="white", size=14, face="bold"),
+                          axis.title = element_text(color="white"),
+                          legend.title = element_text(color = "white", size=12),
+                          legend.text = element_text(color="white"),
+                          legend.background = element_rect("gray27"))
+#ggplotly(plot_daenerys)
+
+#SANSA
+df_sansa <- Function(SANSA_corpus_2_d)
+plot_sansa <- ggplot(df_sansa, aes(x=reorder(sentiment,count,desc),y=count, fill=sentiment, color=sentiment)) + geom_point(size=2, aes(text=sprintf("Sentiment: %s<br>Word Count: %s", sentiment, count))) + geom_bar(stat="identity", width = 0.008) + labs(title="", x = "", y = "") + theme_dark() + theme(plot.background = element_rect(fill = "gray27"),  
+                          axis.text.x = element_text(angle = 45, hjust = 1, colour = "white"),
+                          axis.text.y = element_text(color="white"),
+                          plot.title = element_text(color="white", size=14, face="bold"),
+                          axis.title = element_text(color="white"),
+                          legend.title = element_text(color = "white", size=12),
+                          legend.text = element_text(color="white"),
+                          legend.background = element_rect("gray27"))
+#ggplotly(plot_sansa)
+
+#ARYA
+df_arya <- Function(ARYA_corpus_2_d)
+plot_arya <- ggplot(df_arya, aes(x=reorder(sentiment,count,desc),y=count, fill=sentiment, color=sentiment)) + geom_point(size=2, aes(text=sprintf("Sentiment: %s<br>Word Count: %s", sentiment, count))) + geom_bar(stat="identity", width = 0.008) + labs(title="", x = "", y = "") + theme_dark() + theme(plot.background = element_rect(fill = "gray27"),  
+                          axis.text.x = element_text(angle = 45, hjust = 1, colour = "white"),
+                          axis.text.y = element_text(color="white"),
+                          plot.title = element_text(color="white", size=14, face="bold"),
+                          axis.title = element_text(color="white"),
+                          legend.title = element_text(color = "white", size=12),
+                          legend.text = element_text(color="white"),
+                          legend.background = element_rect("gray27"))
+#ggplotly(plot_arya)
+
+#BRIENNE
+df_brienne <- Function(BRIENNE_corpus_2_d)
+plot_brienne <- ggplot(df_brienne, aes(x=reorder(sentiment,count,desc),y=count, fill=sentiment, color=sentiment)) + geom_point(size=2, aes(text=sprintf("Sentiment: %s<br>Word Count: %s", sentiment, count))) + geom_bar(stat="identity", width = 0.008) + labs(title="", x = "", y = "") + theme_dark() + theme(plot.background = element_rect(fill = "gray27"),  
+                          axis.text.x = element_text(angle = 45, hjust = 1, colour = "white"),
+                          axis.text.y = element_text(color="white"),
+                          plot.title = element_text(color="white", size=14, face="bold"),
+                          axis.title = element_text(color="white"),
+                          legend.title = element_text(color = "white", size=12),
+                          legend.text = element_text(color="white"),
+                          legend.background = element_rect("gray27"))
+#ggplotly(plot_brienne)
+
+#TYRION
+df_tyrion <- Function(TYRION_corpus_2_d)
+plot_tyrion <- ggplot(df_tyrion, aes(x=reorder(sentiment,count,desc),y=count, fill=sentiment, color=sentiment)) + geom_point(size=2, aes(text=sprintf("Sentiment: %s<br>Word Count: %s", sentiment, count))) + geom_bar(stat="identity", width = 0.008) + labs(title="", x = "", y = "") + theme_dark() + theme(plot.background = element_rect(fill = "gray27"),  
+                          axis.text.x = element_text(angle = 45, hjust = 1, colour = "white"),
+                          axis.text.y = element_text(color="white"),
+                          plot.title = element_text(color="white", size=14, face="bold"),
+                          axis.title = element_text(color="white"),
+                          legend.title = element_text(color = "white", size=12),
+                          legend.text = element_text(color="white"),
+                          legend.background = element_rect("gray27"))
+#ggplotly(plot_tyrion)
+
+#JON
+df_jon <- Function(JON_corpus_2_d)
+plot_jon <- ggplot(df_jon, aes(x=reorder(sentiment,count,desc),y=count, fill=sentiment, color=sentiment)) + geom_point(size=2, aes(text=sprintf("Sentiment: %s<br>Word Count: %s", sentiment, count))) + geom_bar(stat="identity", width = 0.008) + labs(title="", x = "", y = "") + theme_dark() + theme(plot.background = element_rect(fill = "gray27"),  
+                          axis.text.x = element_text(angle = 45, hjust = 1, colour = "white"),
+                          axis.text.y = element_text(color="white"),
+                          plot.title = element_text(color="white", size=14, face="bold"),
+                          axis.title = element_text(color="white"),
+                          legend.title = element_text(color = "white", size=12),
+                          legend.text = element_text(color="white"),
+                          legend.background = element_rect("gray27"))
+#ggplotly(plot_jon)
+
+#JAIME
+df_jaime <- Function(JAIME_corpus_2_d)
+plot_jaime <- ggplot(df_jaime, aes(x=reorder(sentiment,count,desc),y=count, fill=sentiment, color=sentiment)) + geom_point(size=2, aes(text=sprintf("Sentiment: %s<br>Word Count: %s", sentiment, count))) + geom_bar(stat="identity", width = 0.008) + labs(title="", x = "", y = "") + theme_dark() + theme(plot.background = element_rect(fill = "gray27"),  
+                          axis.text.x = element_text(angle = 45, hjust = 1, colour = "white"),
+                          axis.text.y = element_text(color="white"),
+                          plot.title = element_text(color="white", size=14, face="bold"),
+                          axis.title = element_text(color="white"),
+                          legend.title = element_text(color = "white", size=12),
+                          legend.text = element_text(color="white"),
+                          legend.background = element_rect("gray27"))
+#ggplotly(plot_jaime)
+
+#DAVOS
+df_davos <- Function(DAVOS_corpus_2_d)
+plot_davos <- ggplot(df_davos, aes(x=reorder(sentiment,count,desc),y=count, fill=sentiment, color=sentiment)) + geom_point(size=2, aes(text=sprintf("Sentiment: %s<br>Word Count: %s", sentiment, count))) + geom_bar(stat="identity", width = 0.008) + labs(title="", x = "", y = "") + theme_dark() + theme(plot.background = element_rect(fill = "gray27"),  
+                          axis.text.x = element_text(angle = 45, hjust = 1, colour = "white"),
+                          axis.text.y = element_text(color="white"),
+                          plot.title = element_text(color="white", size=14, face="bold"),
+                          axis.title = element_text(color="white"),
+                          legend.title = element_text(color = "white", size=12),
+                          legend.text = element_text(color="white"),
+                          legend.background = element_rect("gray27"))
+#ggplotly(plot_davos)
+
+#RAMSAY
+df_ramsay <- Function(RAMSAY_corpus_2_d)
+plot_ramsay <- ggplot(df_ramsay, aes(x=reorder(sentiment,count,desc),y=count, fill=sentiment, color=sentiment)) + geom_point(size=2, aes(text=sprintf("Sentiment: %s<br>Word Count: %s", sentiment, count))) + geom_bar(stat="identity", width = 0.008) + labs(title="", x = "", y = "") + theme_dark() + theme(plot.background = element_rect(fill = "gray27"),  
+                          axis.text.x = element_text(angle = 45, hjust = 1, colour = "white"),
+                          axis.text.y = element_text(color="white"),
+                          plot.title = element_text(color="white", size=14, face="bold"),
+                          axis.title = element_text(color="white"),
+                          legend.title = element_text(color = "white", size=12),
+                          legend.text = element_text(color="white"),
+                          legend.background = element_rect("gray27"))
+#ggplotly(plot_ramsay)
+
+```
+
+```{r shinyDashBoard, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+options(shiny.sanitize.errors = TRUE)
+
+
+ui<- dashboardPage(
+  dashboardHeader(title = "Game of Thrones"),
+  dashboardSidebar(
+    sidebarMenu(
+      menuItem("Overview", tabName = "overview", icon = icon("dashboard")),
+      menuItem("Screen Time", tabName = "ST", icon = icon("eye")),
+      menuItem("Roles and Characters", tabName = "charaters", icon = icon("edit")),
+      menuItem("Resources", tabName = "resources", icon = icon("folder-open")),
+      menuItem("About Us", tabName = "aboutus", icon = icon("phone"))
+    )
+  ),
+  dashboardBody(
+      tags$head(
+        tags$link(rel = "stylesheet", type = "text/css", href = "style.css")
+      ),
+      
+      shinyDashboardThemes(
+        theme = "grey_dark"
+      ),  
+    
+      tabItems(
+        # Overview Tab
+        tabItem(tabName = "overview",
+           fluidRow(
+              box(htmlOutput("overviewOut"), width="100%")
+           )      
+        ),        
+        # ST Analysis Tab
+        tabItem(tabName = "ST",
+          fluidRow(
+            h2(textOutput("titleplot3")),
+            p(textOutput("descplot3")),
+            box(plotOutput("plot3"), width="100%"),            
+            h2(textOutput("titleplot45")),
+            p(textOutput("descplot45")),
+            splitLayout(cellWidths = c("50%", "50%"), 
+                        box(plotOutput("plot4"), width = 100), box(plotOutput("plot5"), width = 100))
+          )  
+        ),
+        # Character Analysis Tab
+        tabItem(tabName = "charaters",
+          fluidRow(
+            h2(textOutput("titleplot1")),
+            p(textOutput("descplot1")),
+            plotOutput("plot1", width = "100%", height = "100%"),            
+            h2(textOutput("titleplot26")),
+            p(textOutput("descplot26")),
+            selectInput(inputId = "select", label = "Select Character",
+              choices = list(`Female` = c("Cerci", "Daenerys", "Sansa", "Arya", "Brienne"),
+                              `Male` = c("Tyrion", "Jon", "Jaime", "Davos", "Ramsay"))),
+            splitLayout(cellWidths = c("50%", "50%"), 
+                        box(h4(textOutput("titleplot2")),
+                              #p(textOutput("descplot2")),
+                              plotOutput("plot2", width = "100%", height = "100%"), width = 100),
+                        box(h4(textOutput("titleplot6")),
+                              #p(textOutput("descplot6")),
+                              plotlyOutput("plot6", width = "100%", height = "100%"), 
+                                    width = 100, height=564))
+          )
+        ), 
+        # Resources Tab
+        tabItem(tabName = "resources",
+           fluidRow(
+              box(htmlOutput("resourcesOut"), width="100%")
+           )      
+        ),
+        # About Us Tab
+        tabItem(tabName = "aboutus",
+           fluidRow(
+              box(htmlOutput("aboutusOut"))
+           )      
+        )
+    )
+  )
+)
+
+server <- function(input, output) { 
+  
+  output$overviewOut<- renderUI({
+    HTML("<h2> Women Empowerment in Game Of Thrones </h2>
+          <h4> Abstract: </h4> </br>
+          <p> Several studies have found that there are fewer lead roles for Women in Hollywood and in Television industry. Women are still treated like second-class citizens when it comes to most movies and series, according to a new study. They're the girlfriend, the mother or the wife. Their value is determined in relation to the people they bed, marry or birth. </p> </br> 
+          <p> Game of thrones is one of the most popular television series of all time and it features a lot of important female characters. But what type of characters they are playing? When we consider the overall ratio of male to female characters, how fairly women have been featured compared to men. We wanted to explore whether the scripts for the Game of Thrones seasons reflected the theme of female empowerment or not. </p> </br> 
+          &#8226 We are mainly addressing the following points: </br> 
+          &#8226 How the dialogue percentage is shared by gender and by character. </br>
+          &#8226 What are the most common words in each of the top female and male characters scripts. </br>
+          &#8226 How the screen time is shared by gender and by characters. </br>
+          &#8226 How has the character development taken place over the seasons based on sentiment analysis, i.e. change of sentiments based on the dialogues </br> </br>
+          <h5> We have built a shiny app by making use of ggplot2, plotly, text mining techniques and word cloud, comparision cloud in our visualization project. </h5>
+         ")    
+  })
+  
+  output$plot1 <- renderPlot({
+    par(bg="gray27")
+    set.seed(2078)
+    comparison.cloud(words_corpus_2_m, colors = c("orange", "chartreuse"), 
+                     title.size= 1, 
+                     max.words = 200)
+  }, height = 1000)
+  
+  output$titleplot1 <- renderText({"What are they talking about?"})
+  output$descplot1 <- renderText({"The comparison cloud below distingushes the most frequently used words by male GOT characters vs female GOT characters. Such comparision gives us fair idea about what type of what type of roles these characters are potraying, what do they talk about, what kind of lines they get, etc."})
+  
+  output$plot3 <- renderPlot({
+    plot_ST
+  })
+
+  output$titleplot3 <- renderText({"Screen Time Sharing between Male and Female characters"})   
+  output$descplot3 <- renderText({"The following graph represents the screentime shared between male and female characters. Observing  the graph we can draw conclusions like how often women are being featured in the series compared to men, how that is changing over the period of time. The visualization suggests that even though the female characters are getting less screentime than male characters the trend is changing with the seasons."})
+  
+  output$plot4 <- renderPlot({
+    plot_STChr
+  })
+  
+  output$plot5 <- renderPlot({
+    plot_EPChr
+  })  
+  
+  output$titleplot45 <- renderText({"Comparing the screen time and number of episodes for famous characters"})
+  output$descplot45 <- renderText({"Now we are comparing the screentime and number of episodes for most popular and featured characters. The visulisation clearly indicates that male characters are getting higher share of screen time and episodes."})
+    
+  output$plot2 <- renderPlot({
+    if(input$select=="Cerci") {
+        set.seed(1234)
+        par(bg="gray27")
+        wordcloud(words = CERSEI_corpus_2_d$word, freq = CERSEI_corpus_2_d$freq, min.freq = 1,
+            max.words=100, random.order=FALSE, rot.per=0.35, random.color = TRUE,
+            colors=c("tomato","wheat","lightblue"))
+    } else if(input$select=="Daenerys") {
+        set.seed(1234)
+        par(bg="gray27")
+        wordcloud(words = DAENERYS_corpus_2_d$word, freq = DAENERYS_corpus_2_d$freq, min.freq = 1,
+            max.words=100, random.order=FALSE, rot.per=0.35, random.color = TRUE,
+            colors=c("tomato","wheat","lightblue"))
+    } else if(input$select=="Sansa") {
+        set.seed(1234)
+        par(bg="gray27")
+        wordcloud(words = SANSA_corpus_2_d$word, freq = SANSA_corpus_2_d$freq, min.freq = 1,
+            max.words=100, random.order=FALSE, rot.per=0.35, random.color = TRUE,
+            colors=c("tomato","wheat","lightblue"))
+    } else if(input$select=="Arya") {
+        set.seed(1234)
+        par(bg="gray27")
+        wordcloud(words = ARYA_corpus_2_d$word, freq = ARYA_corpus_2_d$freq, min.freq = 1,
+            max.words=100, random.order=FALSE, rot.per=0.35, random.color = TRUE,
+            colors=c("tomato","wheat","lightblue"))
+    } else if(input$select=="Brienne") {
+        set.seed(1234)
+        par(bg="gray27")
+        wordcloud(words = BRIENNE_corpus_2_d$word, freq = BRIENNE_corpus_2_d$freq, min.freq = 1,
+            max.words=100, random.order=FALSE, rot.per=0.35, random.color = TRUE,
+            colors=c("tomato","wheat","lightblue"))
+    } else if(input$select=="Tyrion") {
+        set.seed(1234)
+        par(bg="gray27")
+        wordcloud(words = TYRION_corpus_2_d$word, freq = TYRION_corpus_2_d$freq, min.freq = 1,
+            max.words=100, random.order=FALSE, rot.per=0.35, random.color = TRUE,
+            colors=c("tomato","wheat","lightblue"))
+    } else if(input$select=="Jon") {
+        set.seed(1234)
+        par(bg="gray27")
+        wordcloud(words = JON_corpus_2_d$word, freq = JON_corpus_2_d$freq, min.freq = 1,
+            max.words=100, random.order=FALSE, rot.per=0.35, random.color = TRUE,
+            colors=c("tomato","wheat","lightblue"))
+    } else if(input$select=="Jaime") {
+        set.seed(1234)
+        par(bg="gray27")
+        wordcloud(words = JAIME_corpus_2_d$word, freq = JAIME_corpus_2_d$freq, min.freq = 1,
+            max.words=100, random.order=FALSE, rot.per=0.35, random.color = TRUE,
+            colors=c("tomato","wheat","lightblue"))
+    } else if(input$select=="Davos") {
+        set.seed(1234)
+        par(bg="gray27")
+        wordcloud(words = DAVOS_corpus_2_d$word, freq = DAVOS_corpus_2_d$freq, min.freq = 1,
+            max.words=100, random.order=FALSE, rot.per=0.35, random.color = TRUE,
+            colors=c("tomato","wheat","lightblue"))
+    } else if(input$select=="Ramsay") {
+        set.seed(1234)
+        par(bg="gray27")
+        wordcloud(words = RAMSAY_corpus_2_d$word, freq = RAMSAY_corpus_2_d$freq, min.freq = 1,
+            max.words=100, random.order=FALSE, rot.per=0.35, random.color = TRUE,
+            colors=c("tomato","wheat","lightblue"))
+    } 
+  }, height = 500)
+  
+  output$titleplot2 <- renderText({paste0("Most frequently used words by ", input$select, separator=" ")})
+  output$descplot2 <- renderText({"Following wordcloud represents frequently used words by the famous characters"})
+  
+    output$plot6 <- renderPlotly({
+    if(input$select=="Cerci") {
+        ggplotly(plot_cersei, tooltip="text") %>% layout(height = 500, width = 400)
+        #plot_cersei
+    } else if(input$select=="Daenerys") {
+        ggplotly(plot_daenerys, tooltip="text") %>% layout(height = 500, width = 400)
+        #plot_daenerys
+    } else if(input$select=="Sansa") {
+        ggplotly(plot_sansa, tooltip="text") %>% layout(height = 500, width = 400)
+        #plot_sansa
+    } else if(input$select=="Arya") {
+        ggplotly(plot_arya, tooltip="text") %>% layout(height = 500, width = 400)
+        #plot_arya
+    } else if(input$select=="Brienne") {
+        ggplotly(plot_brienne, tooltip="text") %>% layout(height = 500, width = 400)
+        #plot_brienne
+    } else if(input$select=="Tyrion") {
+        ggplotly(plot_tyrion, tooltip="text") %>% layout(height = 500, width = 400)
+        #plot_tyrion
+    } else if(input$select=="Jon") {
+        ggplotly(plot_jon, tooltip="text") %>% layout(height = 500, width = 400)
+        #plot_jon
+    } else if(input$select=="Jaime") {
+        ggplotly(plot_jaime, tooltip="text") %>% layout(height = 500, width = 400)
+        #plot_jaime
+    } else if(input$select=="Davos") {
+        ggplotly(plot_davos, tooltip="text") %>% layout(height = 500, width = 400)
+        #plot_davos 
+    } else if(input$select=="Ramsay") {
+        ggplotly(plot_ramsay, tooltip="text") %>% layout(height = 500, width = 400)
+        #plot_ramsay
+    } 
+  })
+    
+  output$titleplot6 <- renderText({paste0("Sentiment analysis for ", input$select, separator=" ")})
+  output$descplot6 <- renderText({"Following visualization provides sentiment analysis for different characters."}) 
+  
+  output$titleplot26 <- renderText({"Sentiment Analysis for Individual Characters"})
+  output$descplot26 <- renderText({"The word cloud on the left tells us about frequently used words by these characters. This often gives an idea about what type of character these guys are playing. The visualization on the right represents the highly occurred sentiments in the lines spoken by these characters. This can be used to draw conclusions about the nature of the characters as well as the series itself."})
+  
+  output$resourcesOut <- renderUI({
+    HTML("<h2> Data </h2>
+         <h4> For our analysis we have collected datasets from following websites. </h4>
+         &#8226 <b> Scripts of each episodes from season 1-7 </b> </br>
+         <a href='https://genius.com/albums/Game-of-thrones/Season-1-scripts'> 
+         season 1 </a> </br>
+         <a href='https://genius.com/albums/Game-of-thrones/Season-2-scripts'> 
+         season 2 </a> </br>
+         <a href='https://genius.com/albums/Game-of-thrones/Season-3-scripts'> 
+         season 3 </a> </br>
+         <a href='https://genius.com/albums/Game-of-thrones/Season-4-scripts'> 
+         season 4 </a> </br>
+         <a href='https://genius.com/albums/Game-of-thrones/Season-5-scripts'> 
+         season 5 </a> </br>
+         <a href='https://genius.com/albums/Game-of-thrones/Season-6-scripts'> 
+         season 6 </a> </br>
+         <a href='https://genius.com/albums/Game-of-thrones/Season-7-scripts'> 
+         season 7 </a> </br>
+         &#8226 <b> Screen time and Number of episodes of each character for the seasons 1-7 </b> </br>
+         <a href='https://data.world/aendrew/game-of-thrones-screen-times'> 
+         https://data.world/aendrew/game-of-thrones-screen-times </a> </br>
+         ")
+  })
+  
+  output$aboutusOut <- renderUI({
+    HTML("<h2> About Us </h2>
+         <h4> Bhushan Newalkar </h4>
+         <a href='mailto:bmn258@nyu.edu'> bmn258 </a> </br>
+         <h4> Rishi Ranjan </h4>
+         <a href='mailto:rr3261@nyu.edu'> rr3261 </a> </br>
+         ")
+  })
+    
+}
+
+#shinyApp(ui, server)
+shinyApp(ui, server, options = list(height = 2100, width = 900))
+```
